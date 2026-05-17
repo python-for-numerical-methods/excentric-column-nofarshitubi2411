@@ -15,49 +15,25 @@ def find_critical_load(L, E, A, r, c, e, sigma_allow):
     Return: העומס P בניוטון (float)
     """
 
-    # פונקציית המאמץ לפי נוסחת הסקנט
-    def stress_function(P):
+    # פונקציית העזר למציאת השורש
+    def f(P):
 
-        # חישוב הארגומנט של sec
         theta = (L / (2 * r)) * np.sqrt(P / (E * A))
 
-        # sec(x) = 1 / cos(x)
-        sec_theta = 1 / np.cos(theta)
-
-        # נוסחת הסקנט
         sigma_max = (P / A) * (
-            1 + ((e * c) / (r ** 2)) * sec_theta
+            1 + (e * c / (r ** 2)) * (1 / np.cos(theta))
         )
 
-        # פונקציית השורש
         return sigma_max - sigma_allow
 
-    # גבולות התחלה לשיטת החצייה
-    P_min = 1.0
-    P_max = E * A * 0.99
+    # עומס אוילר הקריטי
+    euler_load = (np.pi**2 * E * (A * r**2)) / (L**2)
 
-    # מציאת השורש
-    critical_load = bisect(
-        stress_function,
-        P_min,
-        P_max,
-        xtol=1e-6
-    )
+    # גבולות לשיטת החצייה
+    P_min = 1e-6
+    P_max = 0.999 * euler_load
+
+    # פתרון נומרי
+    critical_load = bisect(f, P_min, P_max, xtol=1e-6)
 
     return critical_load
-
-
-if __name__ == "__main__":
-
-    # דוגמת בדיקה
-    L = 3000       # mm
-    E = 200000     # MPa
-    A = 5000       # mm^2
-    r = 80         # mm
-    c = 100        # mm
-    e = 20         # mm
-    sigma_allow = 250   # MPa
-
-    P = find_critical_load(L, E, A, r, c, e, sigma_allow)
-
-    print(f"Critical Load = {P:.3f} N")
